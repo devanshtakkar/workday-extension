@@ -12,51 +12,88 @@ const sharedConfig = {
   jsxFragment: 'React.Fragment',
 };
 
-async function build() {
-  try {
-    // Example: content script
-    // await esbuild.build({
-    //   ...sharedConfig,
-    //   entryPoints: ['src/content.ts'],
-    //   outfile: 'dist/content.js',
-    // });
+async function createBuildContexts() {
+  // Create build contexts for each entry point
+  const contexts = [];
 
+  try {
     // Sidebar (React app)
-    await esbuild.build({
+    const sidebarContext = await esbuild.context({
       ...sharedConfig,
       entryPoints: ['src/sidebar/index.tsx'],
       outfile: 'dist/sidebar/index.js',
-      platform: 'browser', // Target browser environment
+      platform: 'browser',
       define: {
         'process.env.NODE_ENV': watch ? '\"development\"' : '\"production\"',
       },
     });
+    contexts.push(sidebarContext);
+
+    // Popup (React app)
+    const popupContext = await esbuild.context({
+      ...sharedConfig,
+      entryPoints: ['src/popup/index.tsx'],
+      outfile: 'dist/popup/index.js',
+      platform: 'browser',
+      define: {
+        'process.env.NODE_ENV': watch ? '\"development\"' : '\"production\"',
+      },
+    });
+    contexts.push(popupContext);
 
     // Background script
-    await esbuild.build({
+    const backgroundContext = await esbuild.context({
       ...sharedConfig,
       entryPoints: ['src/background/index.ts'],
       outfile: 'dist/background/index.js',
-      platform: 'browser', // Or 'node' if it doesn't interact with browser APIs directly much
-                         // For sidePanel API, 'browser' is appropriate.
+      platform: 'browser',
     });
+    contexts.push(backgroundContext);
 
-    console.log('Build successful!');
-    if (watch) {
-      console.log('Watching for changes...');
-    }
+    return contexts;
   } catch (e) {
-    console.error('Build failed:', e);
+    console.error('Failed to create build contexts:', e);
     process.exit(1);
   }
 }
 
-build();
+async function main() {
+  const contexts = await createBuildContexts();
+  
+  // Initial build
+  for (const context of contexts) {
+    await context.rebuild();
+  }
+  
+  console.log('Initial build successful!');
+  
+  if (watch) {
+    console.log('Starting esbuild watch mode...');
+    
+    // Start watching for all contexts
+    for (const context of contexts) {
+      await context.watch();
+    }
+    
+    console.log('Watching for changes. Press Ctrl+C to exit.');
+    
+    // Handle process termination
+    process.on('SIGINT', async () => {
+      console.log('Shutting down watchers...');
+      for (const context of contexts) {
+        await context.dispose();
+      }
+      process.exit(0);
+    });
+  } else {
+    // Dispose contexts after the build is complete
+    for (const context of contexts) {
+      await context.dispose();
+    }
+  }
+}
 
-if (watch) {
-  const chokidar = await import('chokidar');
-  chokidar.watch('src/**/*', { ignored: /node_modules|dist/ , ignoreInitial: true}).on('all', (event, pathValue) => { // Renamed path to pathValue to avoid conflict with path module
-    console.log(`File ${pathValue} ${event}. Rebuilding...`);
-    build();
-  });
-} 
+main().catch(err => {
+  console.error('Build error:', err);
+  process.exit(1);
+}); 

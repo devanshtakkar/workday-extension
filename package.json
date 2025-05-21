@@ -8,7 +8,7 @@
     "tailwind:build": "npx @tailwindcss/cli -i src/index.css -o dist/index.css",
     "tailwind:watch": "npx @tailwindcss/cli -i src/index.css -o dist/index.css --watch",
     "build": "npm run tailwind:build && node build.mjs",
-    "watch": "npm run tailwind:watch & node build.mjs --watch",
+    "watch": "node build.mjs --watch",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
