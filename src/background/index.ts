@@ -1,13 +1,17 @@
 chrome.action.onClicked.addListener(async (tab) => {
-  console.log("fuck");
-  // open the default popup only when the jwt is not present im the local storage
-  const jwt = await chrome.storage.local.get("jwt");
-  if (!jwt) {
-    // set the popup html to the popup.html file
-    chrome.action.setPopup({
-      popup: "../popup.html",
-    });
+  console.log("Extension clicked");
+  // open the default popup only when the jwt is not present in the local storage
+  try {
+    const result = await chrome.storage.local.get(["jwt"]);
+    if (!result.jwt) {
+      // set the popup html to the popup.html file
+      await chrome.action.setPopup({
+        popup: "../popup.html",
+      });
 
-    chrome.action.openPopup()
+      await chrome.action.openPopup();
+    }
+  } catch (error) {
+    console.error("Error accessing storage:", error);
   }
 });
