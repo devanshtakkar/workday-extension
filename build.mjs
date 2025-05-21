@@ -1,5 +1,4 @@
 import esbuild from 'esbuild';
-import path from 'path';
 
 const watch = process.argv.includes('--watch');
 
