@@ -1,5 +1,4 @@
 chrome.action.onClicked.addListener(async (tab) => {
-  console.log("Extension clicked");
   // open the default popup only when the jwt is not present in the local storage
   try {
     const result = await chrome.storage.local.get(["jwt"]);
