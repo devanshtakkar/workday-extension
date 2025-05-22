@@ -1,21 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-
+import SignIn from './SignIn';
 const App: React.FC = () => {
-  const handleSignIn = () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('auth.html') });
-  };
+  let [showSignIn, setShowSignIn] = useState(true);
+  // when the popup is opened, check if the FIREBASE_LOGIN is set. If it is set then show the message to open the login page again
+  useEffect(() => {
+    const checkLogin = async () => {
+      const result = await chrome.storage.local.get(["FIREBASE_LOGIN"]);
+      if (result.FIREBASE_LOGIN) {
+        setShowSignIn(false);
+      }
+    };
+    checkLogin();
+  }, []);
 
   return (
-    <div className="p-4 w-64 bg-white shadow-md rounded-md">
-      <h1 className="text-xl font-bold text-gray-800 mb-2">Workday Assistant</h1>
-      <p className="text-sm text-gray-600 mb-4">AI-powered assistance for Workday job applications</p>
-      <button 
-        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors"
-        onClick={handleSignIn}
-      >
-        Sign In
-      </button>
+    <div>
+      {showSignIn ? <SignIn /> : <div>Sign In page is open</div>}
     </div>
   );
 };
